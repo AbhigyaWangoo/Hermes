@@ -1,7 +1,8 @@
 import os
 import pandas as pd
-from typing import List
+from typing import List, Dict, Any
 import openai
+from src.client.mongo import MongoDBUploader
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,8 +14,13 @@ class Chunker:
     def __init__(self, chunk_size: int=CHUNK_SIZE):
         self.chunk_size = chunk_size
 
-        api_key=os.environ.get("OPENAI_API_KEY")
-        self.openai_client=openai.OpenAI(api_key=api_key)
+        api_key=os.environ.get("OPENAI_API_KEY", None)
+        mongodb_url=os.environ.get("MONGODB_URL", None)
+        mongodb_db=os.environ.get("MONGODB_DB", None)
+        mongodb_collection=os.environ.get("MONGODB_COLLECTION", None)
+
+        self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
+        self.openai_client = openai.OpenAI(api_key=api_key)
 
     def read_csv(self, file_path: str):
         """
@@ -62,5 +68,11 @@ class Chunker:
 
         if data is not None:
             chunks = self.split_into_chunks(data)
-            embedded_chunks = [self.embed(chunk) for chunk in chunks]
+            embedded_chunks = {}
+            for idx, chunk in enumerate(chunks):
+                embedded_chunks[f"{file_path}_{idx}"] = self.embed(chunk)
             return embedded_chunks
+
+    def upload_chunks_to_mongo(self, chunks: Dict[str, List[Any]]):
+        """ Upload a set of chunk embeddings into mongodb with the filename+chunksize """
+        self.mongo_client.upload_embeddings(chunks)
