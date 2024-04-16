@@ -1,5 +1,5 @@
-from huggingface_hub import HfApi, hf_hub_download
-import requests
+from huggingface_hub import HfApi, snapshot_download
+from typing import List, Any
 import pandas as pd
 
 DEFAULT_TIMEOUT=5
@@ -10,19 +10,17 @@ class HuggingFaceClient:
     def __init__(self):
         self.client=HfApi()
 
-    def list_text_datasets(self) -> set:
+    def list_datasets(self, dataset_filter: str) -> List[Any]:
         """
-        List all Hugging Face text-based datasets.
+        List all Hugging Face text-based datasets. Wrapper around 
+        HFAPI for future caching.
+        
+        returns: List of DatasetInfo objects.
         """
         try:
-            datasets = self.client.list_models()
+            datasets = self.client.list_datasets(filter=dataset_filter)
 
-            txt_sets = set()
-            for dataset in datasets:
-                if "text" in dataset.tags:
-                    txt_sets.add(dataset.id)
-
-            return txt_sets
+            return datasets
         except Exception as e:
             print(f"Error fetching datasets: {e}")
             return None
@@ -33,11 +31,7 @@ class HuggingFaceClient:
         """
 
         try:
-            dataset = pd.read_csv(
-                hf_hub_download(repo_id=repo_id, filename=local_filepath, repo_type="dataset")
-            )
-
-            dataset.to_csv(local_filepath)
+            snapshot_download(repo_id=repo_id, repo_type="dataset", local_dir=local_filepath)
 
             print(f"Dataset '{repo_id}' downloaded to '{local_filepath}'")
             return True
