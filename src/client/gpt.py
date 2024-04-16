@@ -13,11 +13,12 @@ DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 DEFAULT_LLM = "gpt-4"
 JSON_COMPATIBLE_LLM = "gpt-4-1106-preview"
 
-EMBEDDING_TO_DIMENSION={
+EMBEDDING_TO_DIMENSION = {
     "text-embedding-3-small": 1536,
     "text-embedding-ada-002": 1536,
-    "text-embedding-3-large": 3072
+    "text-embedding-3-large": 3072,
 }
+
 
 class GPTClient:
     """A client module to call the GPT API"""
@@ -38,7 +39,7 @@ class GPTClient:
                 model=embedding_model, input=sentence
             )
             embeddings = response.data[0].embedding
-            
+
             return embeddings
         except Exception as e:
             return str(e)

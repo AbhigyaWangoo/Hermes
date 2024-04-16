@@ -38,6 +38,9 @@ class HuggingFaceClient(base.AbstractDatasetClient):
         """
 
         try:
+            if not os.path.exists(local_filepath):
+                os.mkdir(local_filepath)
+
             snapshot_download(
                 repo_id=dataset_id, repo_type="dataset", local_dir=local_filepath
             )
