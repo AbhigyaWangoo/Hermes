@@ -4,10 +4,11 @@ import os
 from include.utils import DATA_DIR
 
 DEFAULT_TIMEOUT = 5
-DATASET_DIR=os.path.join(DATA_DIR, "datasets")
+DATASET_DIR = os.path.join(DATA_DIR, "datasets")
 
 if not os.path.exists(DATASET_DIR):
     os.mkdir(DATASET_DIR)
+
 
 class HuggingFaceClient:
     """A client to interact with hugging face datasets"""
