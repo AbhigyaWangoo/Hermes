@@ -9,7 +9,6 @@ load_dotenv()
 
 CHUNK_SIZE = 100
 
-
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
 

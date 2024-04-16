@@ -1,6 +1,7 @@
 from huggingface_hub import HfApi, snapshot_download
 from typing import List, Any
 import os
+from . import base
 from include.utils import DATA_DIR
 
 DEFAULT_TIMEOUT = 5
@@ -10,7 +11,7 @@ if not os.path.exists(DATASET_DIR):
     os.mkdir(DATASET_DIR)
 
 
-class HuggingFaceClient:
+class HuggingFaceClient(base.AbstractDatasetClient):
     """A client to interact with hugging face datasets"""
 
     def __init__(self):
@@ -31,18 +32,18 @@ class HuggingFaceClient:
             print(f"Error fetching datasets: {e}")
             return None
 
-    def download_dataset(self, repo_id: str, local_filepath: str):
+    def download_dataset(self, dataset_id: str, local_filepath: str):
         """
         Download a dataset from the Hugging Face Hub and save it to a local filepath.
         """
 
         try:
             snapshot_download(
-                repo_id=repo_id, repo_type="dataset", local_dir=local_filepath
+                repo_id=dataset_id, repo_type="dataset", local_dir=local_filepath
             )
 
-            print(f"Dataset '{repo_id}' downloaded to '{local_filepath}'")
+            print(f"Dataset '{dataset_id}' downloaded to '{local_filepath}'")
             return True
         except Exception as e:
-            print(f"Error downloading dataset '{repo_id}': {e}")
+            print(f"Error downloading dataset '{dataset_id}': {e}")
             return False
