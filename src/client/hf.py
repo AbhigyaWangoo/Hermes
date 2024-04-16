@@ -1,9 +1,13 @@
 from huggingface_hub import HfApi, snapshot_download
 from typing import List, Any
-import pandas as pd
+import os
+from include.utils import DATA_DIR
 
 DEFAULT_TIMEOUT = 5
+DATASET_DIR=os.path.join(DATA_DIR, "datasets")
 
+if not os.path.exists(DATASET_DIR):
+    os.mkdir(DATASET_DIR)
 
 class HuggingFaceClient:
     """A client to interact with hugging face datasets"""
