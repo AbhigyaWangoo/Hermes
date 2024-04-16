@@ -7,17 +7,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHUNK_SIZE=100
+CHUNK_SIZE = 100
+
 
 class Chunker:
-    """ A class to chunk up a dataset and place each chunk into mongodb atlas """
-    def __init__(self, chunk_size: int=CHUNK_SIZE):
+    """A class to chunk up a dataset and place each chunk into mongodb atlas"""
+
+    def __init__(self, chunk_size: int = CHUNK_SIZE):
         self.chunk_size = chunk_size
 
-        api_key=os.environ.get("OPENAI_API_KEY", None)
-        mongodb_url=os.environ.get("MONGODB_URL", None)
-        mongodb_db=os.environ.get("MONGODB_DB", None)
-        mongodb_collection=os.environ.get("MONGODB_COLLECTION", None)
+        api_key = os.environ.get("OPENAI_API_KEY", None)
+        mongodb_url = os.environ.get("MONGODB_URL", None)
+        mongodb_db = os.environ.get("MONGODB_DB", None)
+        mongodb_collection = os.environ.get("MONGODB_COLLECTION", None)
 
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = openai.OpenAI(api_key=api_key)
@@ -37,7 +39,10 @@ class Chunker:
         Split the DataFrame into chunks of size self.chunk_size.
         """
         num_chunks = len(data) // self.chunk_size
-        return [data[i*self.chunk_size:(i+1)*self.chunk_size] for i in range(num_chunks)]
+        return [
+            data[i * self.chunk_size : (i + 1) * self.chunk_size]
+            for i in range(num_chunks)
+        ]
 
     def embed(
         self, content: str, embedding_model: str = "text-embedding-3-small"
@@ -74,5 +79,5 @@ class Chunker:
             return embedded_chunks
 
     def upload_chunks_to_mongo(self, chunks: Dict[str, List[Any]]):
-        """ Upload a set of chunk embeddings into mongodb with the filename+chunksize """
+        """Upload a set of chunk embeddings into mongodb with the filename+chunksize"""
         self.mongo_client.upload_embeddings(chunks)
