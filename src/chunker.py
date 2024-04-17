@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from typing import List, Dict, Any
-import openai
+import numpy as np
 from src.client.mongo import MongoDBUploader
 from src.client.gpt import GPTClient
 from dotenv import load_dotenv
@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHUNK_SIZE = 100
+
 
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
@@ -23,15 +24,24 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame):
+    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int):
         """
         Split the DataFrame into chunks of size self.chunk_size.
+
+        data: df with data.
+        n_chunks: The number of chunks to return. If < 0, returns the entire chunked dataset.
+                  Else, this will sample n_chunks chunks from the entire dataframe
         """
-        num_chunks = len(data) // self.chunk_size
-        return [
-            data[i * self.chunk_size : (i + 1) * self.chunk_size]
-            for i in range(num_chunks)
-        ]
+        if n_chunks < 0:
+            n_chunks = len(data) // self.chunk_size
+
+        chunks = []
+        for i in range(0, len(data), self.chunk_size):
+            chunk = data.iloc[i : i + self.chunk_size]
+            chunks.append(chunk)
+
+        rand_chunks = np.random.choice(chunks, n_chunks)
+        return rand_chunks
 
     def process_file(self, file_path: str) -> Dict[str, List[List[float]]]:
         """

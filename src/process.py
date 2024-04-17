@@ -17,7 +17,9 @@ def process_single_dataset(
     dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
 
     chunker = Chunker()
-    chunks = chunker.process_file(local_fpath) # TODO currently this function is broken because it tries to read the folder as a csv.
+    chunks = chunker.process_file(
+        local_fpath
+    )  # TODO currently this function is broken because it tries to read the folder as a csv.
 
     chunker.upload_chunks_to_mongo(chunks)
 
