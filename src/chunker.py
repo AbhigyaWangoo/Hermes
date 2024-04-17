@@ -24,7 +24,7 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int):
+    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = -1):
         """
         Split the DataFrame into chunks of size self.chunk_size.
 
