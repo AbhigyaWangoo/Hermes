@@ -105,3 +105,6 @@ class MongoDBUploader:
         for i in result:
             print(i)
  
+    def delete_all(self):
+        """Deletes an entire collection. Be careful with this one..."""
+        self.collection.delete_many({})
