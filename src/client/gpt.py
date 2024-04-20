@@ -2,6 +2,7 @@ from openai import OpenAI
 import json
 from dotenv import load_dotenv
 import os
+from typing import List
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -30,7 +31,7 @@ class GPTClient:
 
     def generate_embeddings(
         self, sentence: str, embedding_model: str = DEFAULT_EMBEDDING_MODEL
-    ) -> str:
+    ) -> List[float]:
         """
         Use the OpenAI API to generate embeddings for the provided string.
         """

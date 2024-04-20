@@ -86,6 +86,6 @@ class Chunker:
                 )
             return embedded_chunks
 
-    def upload_chunks_to_mongo(self, chunks: Dict[str, List[Any]]):
+    def upload_chunks_to_mongo(self, chunks: Dict[str, List[List[float]]]):
         """Upload a set of chunk embeddings into mongodb with the filename+chunksize"""
         self.mongo_client.upload_embeddings(chunks)
