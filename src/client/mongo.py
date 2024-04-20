@@ -29,3 +29,7 @@ class MongoDBUploader:
 
             document.update(kwargs)  # Add additional fields from kwargs
             self.collection.insert_one(document)
+
+    def delete_all(self):
+        """Deletes an entire collection. Be careful with this one..."""
+        self.collection.delete_many({})

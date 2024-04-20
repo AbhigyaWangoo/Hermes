@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHUNK_SIZE = 100
-DEFAULT_NUM_CHUNKS=50
+DEFAULT_NUM_CHUNKS=300
 
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
@@ -29,6 +29,8 @@ class Chunker:
     def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = DEFAULT_NUM_CHUNKS, split_by_line: bool=True) -> List[str]:
         """
         Split the DataFrame into chunks of size self.chunk_size.
+        
+        TODO splitting by string chunks seems to be broken right now. split by line for default.
 
         data: df with data.
         n_chunks: The number of chunks to return. If < 0, returns the entire chunked dataset.
@@ -41,7 +43,7 @@ class Chunker:
         chunks = []
         if not split_by_line:
             for i in range(0, len(data), self.chunk_size):
-                chunk = data.iloc[i : i + self.chunk_size]
+                chunk = data.iloc[i : i + self.chunk_size].to_string(index=False)
                 chunks.append(chunk)
         else:
             random_indices = random.sample(range(len(data)), n_chunks)
@@ -64,17 +66,8 @@ class Chunker:
             raise ValueError(f"Unsupported file format: {ext}")
 
         try:
-            if file_type == 'csv':
-                df = pd.read_csv(file_path)
-            elif file_type == 'json':
-                df = pd.read_json(file_path)
-            elif file_type == 'txt':
-                # Assuming text file is whitespace separated
-                df = pd.read_csv(file_path, delim_whitespace=True)
-            elif file_type == 'parquet':
-                df = pd.read_parquet(file_path)
-            else:
-                raise ValueError(f"Unsupported file type: {file_type}")
+            dataset_dict = load_dataset(file_type, data_files=file_path)
+            df = pd.concat([dataset.to_pandas() for dataset in dataset_dict.values()], ignore_index=True)
         except ValueError as ve:
             print(f"Error when loading dataset file {file_path}. Erroring out: {ve}")
             raise ValueError from ve
@@ -87,13 +80,17 @@ class Chunker:
         """
         This wrapper coalesces multiple files into one single dataframe to chunk.
         """
-        rv_df: pd.DataFrame
-        rv_df=self.read_into_df(files[0])
+        rv_df = pd.DataFrame()
 
-        for i in range(1, len(files), 1):
-            fstr = files[i]
-            df = self.read_into_df(fstr)
-            rv_df = rv_df.append(df, ignore_index=True)
+        for fstr in files:
+            try:
+                df = self.read_into_df(fstr)
+                rv_df = rv_df.append(df, ignore_index=True)
+            except ValueError as e:
+                print(f"Couldn't load {fstr}, continuing without it. Error: {e} ")
+
+        if len(rv_df) == 0:
+            raise ValueError(f"Couldn't load an entire dataset {dataset_name}")
 
         return self.process_dataset(rv_df, dataset_name)
 

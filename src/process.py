@@ -2,8 +2,7 @@ import os
 from src.client.dataset_retriever.base import AbstractDatasetClient
 from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
-from multiprocessing import Process, Queue
-import time
+from include.utils import clear_directory
 
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
@@ -19,49 +18,40 @@ def process_single_dataset(
     chunker = Chunker()
     dfiles = dataset_client.get_data_file_from_dir(local_fpath)
     print(f"Uploading dataset {dfiles}")
-    chunks = chunker.process_files(dfiles, dataset)
 
-    # Gathering other metadata for the document
-    summary=dataset_client.generate_dataset_summary(local_fpath)
-    links=dataset_client.generate_dataset_link(dataset)
+    try:
+        chunks = chunker.process_files(dfiles, dataset)
 
-    chunker.upload_chunks_to_mongo(chunks, links=links, dataset_summary=summary)
+        # Gathering other metadata for the document
+        summary=dataset_client.generate_dataset_summary(local_fpath)
+        links=dataset_client.generate_dataset_link(dataset)
+
+        chunker.upload_chunks_to_mongo(chunks, links=links, dataset_summary=summary)
+    except ValueError:
+        print(f"Dataset {dataset} couldn't be read. Continuing...")
 
 
 def main_loop(n_proc: int):
     """
     Main iteration loop. This runs constantly, pulling dataset after dataset, chunking
 
-    n_proc: the number of processes to fire off the process_dataset function.
+    n_proc: the number of processes to fire off the process_dataset function. TODO implement
     """
 
-    # Queue for communication between processes
-    dataset_queue = Queue()
+    dcl = HuggingFaceClient()
+    dtp = dcl.list_datasets("text-classification")
 
-    while True:
-        # Retrieve datasets and add them to the queue
-        dataset_client = HuggingFaceClient()
-        datasets_to_process = dataset_client.list_datasets("text-classification")
-        for dataset in datasets_to_process:
-            dataset_queue.put(dataset)
+    count=10
+    for dataset in dtp:
+        name = dataset.id
+        dataset_dst = os.path.join(DATASET_DIR, name.split("/")[-1])
 
-        # Start the processing processes
-        processes = []
-        for _ in range(n_proc):
-            if not dataset_queue.empty():
-                dataset = dataset_queue.get()
-                p = Process(
-                    target=process_single_dataset,
-                    args=(dataset, os.path.join(DATASET_DIR, dataset), dataset_client),
-                )
-                p.start()
-                processes.append(p)
-            else:
-                break
+        if os.path.exists(dataset_dst):
+            continue
 
-        # Wait for all processes to finish
-        for p in processes:
-            p.join()
+        process_single_dataset(name, dataset_dst, dcl)
+        clear_directory(dataset_dst) # Clearing up disk space, as we have the data in mongodb atlas now.
 
-        # Sleep for some time before checking for new datasets again
-        time.sleep(10)  # Adjust sleep time as needed
+        count-=1
+        if count == 0:
+            break
