@@ -1,4 +1,5 @@
 import os
+import random
 import pandas as pd
 from typing import List, Dict, Any
 import numpy as np
@@ -43,19 +44,41 @@ class Chunker:
         rand_chunks = np.random.choice(chunks, n_chunks)
         return rand_chunks
 
-    def process_file(self, file_path: str) -> Dict[str, List[List[float]]]:
+    def process_files(
+        self, files: List[str], dataset_name: str
+    ) -> Dict[str, List[List[float]]]:
+        """
+        This wrapper coalesces multiple files into one single dataframe to chunk.
+        """
+        rv_df: pd.DataFrame
+        with open(files[0], "r", encoding="utf8") as fp:
+            rv_df = pd.read_csv(fp)
+
+        for i in range(1, len(files), 1):
+            fstr = files[i]
+            with open(fstr, "r", encoding="utf8") as fp:
+                df = pd.read_csv(fp)
+
+                rv_df = rv_df.append(df, ignore_index=True)
+
+        return self.process_dataset(rv_df, dataset_name)
+
+    def process_dataset(
+        self, data: pd.DataFrame, dataset_name: str, k: int = 3
+    ) -> Dict[str, List[List[float]]]:
         """
         Read the CSV file, split it into chunks, and encode each chunk.
 
         returns: A dict of the following type {"filename_index" : [[chunk embedding]]}
         """
-        data = pd.read_csv(file_path)
-
         if data is not None:
             chunks = self.split_into_chunks(data)
             embedded_chunks = {}
-            for idx, chunk in enumerate(chunks):
-                embedded_chunks[f"{file_path}_{idx}"] = (
+
+            # randomly select k chunks
+            selected_chunks = random.sample(chunks, k=k)
+            for idx, chunk in enumerate(selected_chunks):
+                embedded_chunks[f"{dataset_name}_{idx}"] = (
                     self.openai_client.generate_embeddings(chunk)
                 )
             return embedded_chunks
