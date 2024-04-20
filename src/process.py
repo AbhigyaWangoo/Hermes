@@ -4,7 +4,6 @@ from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
 from include.utils import clear_directory
 
-
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
 ):
@@ -60,12 +59,17 @@ def main_loop(n_proc: int):
     dcl = HuggingFaceClient()
     dtp = dcl.list_datasets("text-classification")
 
+    count=10
     for dataset in dtp:
         name = dataset.id
-        print(name)
         dataset_dst = os.path.join(DATASET_DIR, name.split("/")[-1])
 
         if os.path.exists(dataset_dst):
             continue
 
         process_single_dataset(name, dataset_dst, dcl)
+        clear_directory(dataset_dst) # Clearing up disk space, as we have the data in mongodb atlas now.
+
+        count-=1
+        if count == 0:
+            break

@@ -13,8 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHUNK_SIZE = 100
-DEFAULT_NUM_CHUNKS = 300
-
+DEFAULT_NUM_CHUNKS=300
 
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
@@ -37,6 +36,8 @@ class Chunker:
     ) -> List[str]:
         """
         Split the DataFrame into chunks of size self.chunk_size.
+        
+        TODO splitting by string chunks seems to be broken right now. split by line for default.
 
         TODO splitting by string chunks seems to be broken right now. split by line for default.
 
@@ -89,18 +90,8 @@ class Chunker:
         print(encoding)
 
         try:
-            # dataset_dict = load_dataset(file_type, data_files=file_path)
-            # df = pd.concat([dataset.to_pandas(encoding=encoding) for dataset in tqdm.tqdm(dataset_dict.values(), desc="Reading dataset values and concatenating into a dataframe")], ignore_index=True)
-            if file_type == "csv":
-                df = pd.read_csv(file_path, encoding=encoding)
-            elif file_type == "json":
-                df = pd.read_json(file_path, encoding=encoding)
-            elif file_type == "txt":
-                df = pd.read_csv(file_path, delimiter="\t", encoding=encoding)
-            elif file_type == "parquet":
-                df = pd.read_parquet(file_path, engine="pyarrow")
-            else:
-                raise ValueError(f"Unsupported file format: {ext}")
+            dataset_dict = load_dataset(file_type, data_files=file_path)
+            df = pd.concat([dataset.to_pandas() for dataset in dataset_dict.values()], ignore_index=True)
         except ValueError as ve:
             print(f"Error when loading dataset file {file_path}. Erroring out: {ve}")
             raise ValueError from ve
