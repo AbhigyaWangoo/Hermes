@@ -31,11 +31,12 @@ def process_single_dataset(
     in mongodb
     """
 
-    dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
-    chunker = Chunker()
+    if not os.path.exists(local_fpath):
+        dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
 
+    chunker = Chunker()
     dfiles = get_data_file_from_dir(local_fpath)
-    print(dfiles)
+    print(f"Uploading dataset {dfiles}")
     chunks = chunker.process_files(dfiles, dataset)
 
     chunker.upload_chunks_to_mongo(chunks)

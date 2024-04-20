@@ -25,21 +25,27 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = 3):
+    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = 3, split_by_line: bool=True) -> List[str]:
         """
         Split the DataFrame into chunks of size self.chunk_size.
 
         data: df with data.
         n_chunks: The number of chunks to return. If < 0, returns the entire chunked dataset.
                   Else, this will sample n_chunks chunks from the entire dataframe
+        split_by_line: If true, this will split the data by each row, and not by raw data.
         """
         if n_chunks < 0:
             n_chunks = len(data) // self.chunk_size
 
         chunks = []
-        for i in range(0, len(data), self.chunk_size):
-            chunk = data.iloc[i : i + self.chunk_size]
-            chunks.append(chunk)
+        if not split_by_line:
+            for i in range(0, len(data), self.chunk_size):
+                chunk = data.iloc[i : i + self.chunk_size]
+                chunks.append(chunk)
+        else:
+            random_indices = random.sample(range(len(data)), n_chunks)
+            chunks = [data.iloc[index].to_string(index=False) for index in random_indices]
+            print(len(chunks))
 
         rand_chunks = np.random.choice(chunks, n_chunks)
         return rand_chunks
