@@ -12,6 +12,8 @@ def get_data_file_from_dir(directory: str) -> List[str]:
     Given a directory, this returns the path of all files within that directory
     (as well as nested files) that have 'train' or 'test' in their name. The
     output is a list of these paths.
+
+    TODO look at this, see if u can make it better: https://huggingface.co/docs/datasets/loading
     """
     data_files = []
 
@@ -21,7 +23,6 @@ def get_data_file_from_dir(directory: str) -> List[str]:
                 data_files.append(os.path.join(root, file))
 
     return data_files
-
 
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
@@ -39,7 +40,11 @@ def process_single_dataset(
     print(f"Uploading dataset {dfiles}")
     chunks = chunker.process_files(dfiles, dataset)
 
-    chunker.upload_chunks_to_mongo(chunks)
+    # Gathering other metadata for the document
+    summary=dataset_client.generate_dataset_summary(local_fpath)
+    links=dataset_client.generate_dataset_link(dataset)
+
+    chunker.upload_chunks_to_mongo(chunks, links=links, dataset_summary=summary)
 
 
 def main_loop(n_proc: int):

@@ -14,7 +14,8 @@ if not os.path.exists(DATASET_DIR):
 class HuggingFaceClient(base.AbstractDatasetClient):
     """A client to interact with hugging face datasets"""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        super().__init__()
         self.client = HfApi()
 
     def list_datasets(self, dataset_filter: str) -> List[Any]:
@@ -50,3 +51,35 @@ class HuggingFaceClient(base.AbstractDatasetClient):
         except Exception as e:
             print(f"Error downloading dataset '{dataset_id}': {e}")
             return False
+
+    def generate_dataset_link(self, dataset_id: str) -> str:
+        """
+        Gather the link to a huggingface dataset.
+        
+        dataset_id: the name of the dataset in hf
+        """
+        base_url = "https://huggingface.co/datasets/"
+        dataset_url = os.path.join(base_url, dataset_id)
+
+        return dataset_url
+
+    def generate_dataset_summary(self, dataset_id: str) -> str:
+        """
+        Get the summary of the huggingface dataset. Reads the 
+        readme file and generates a summary based on that.
+
+        dataset_id: the root dir of the dataset
+        """
+
+        for root, _, files in os.walk(dataset_id):
+            for file in files:
+                if file.lower() == "readme.md":
+                    with open(os.path.join(root, file), "r", encoding="utf8") as fp:
+                        documentation=fp.read().strip()
+
+                        summary = self.gpt_client.query(
+                            prompt=documentation,
+                            sys_prompt=base.DATASET_SUMMMARY_PROMPT
+                        )
+
+                        return summary

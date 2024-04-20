@@ -7,8 +7,12 @@ if __name__ == "__main__":
     dcl = HuggingFaceClient()
     dtp = dcl.list_datasets("text-classification")
 
+    count=10
     for dataset in dtp:
+        count-=1
         name = dataset.id
         dataset_dst = os.path.join(DATASET_DIR, name.split("/")[-1])
         process_single_dataset(name, dataset_dst, dcl)
-        break
+
+        if count == 0:
+            break
