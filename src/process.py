@@ -4,25 +4,6 @@ from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
 from multiprocessing import Process, Queue
 import time
-from typing import List
-
-
-def get_data_file_from_dir(directory: str) -> List[str]:
-    """
-    Given a directory, this returns the path of all files within that directory
-    (as well as nested files) that have 'train' or 'test' in their name. The
-    output is a list of these paths.
-
-    TODO look at this, see if u can make it better: https://huggingface.co/docs/datasets/loading
-    """
-    data_files = []
-
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if "train" in file or "test" in file or "valid" in file:
-                data_files.append(os.path.join(root, file))
-
-    return data_files
 
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
@@ -36,7 +17,7 @@ def process_single_dataset(
         dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
 
     chunker = Chunker()
-    dfiles = get_data_file_from_dir(local_fpath)
+    dfiles = dataset_client.get_data_file_from_dir(local_fpath)
     print(f"Uploading dataset {dfiles}")
     chunks = chunker.process_files(dfiles, dataset)
 

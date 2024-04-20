@@ -17,6 +17,13 @@ class AbstractDatasetClient(ABC):
         self.gpt_client=GPTClient()
 
     @abstractmethod
+    def get_data_file_from_dir(self, directory: str) -> List[str]:
+        """
+        An abstract method that given a directory, returns 
+        the path of all files within that directory.
+        """
+
+    @abstractmethod
     def download_dataset(self, dataset_id: str, local_filepath: str):
         """
         An abstract method to download a dataset provided with some

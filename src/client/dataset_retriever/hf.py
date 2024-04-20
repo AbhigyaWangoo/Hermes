@@ -26,9 +26,9 @@ class HuggingFaceClient(base.AbstractDatasetClient):
         returns: List of DatasetInfo objects.
         """
         try:
-            datasets = self.client.list_datasets(filter=dataset_filter)
+            datasets_found = self.client.list_datasets(filter=dataset_filter)
 
-            return datasets
+            return datasets_found
         except Exception as e:
             print(f"Error fetching datasets: {e}")
             return None
@@ -83,3 +83,20 @@ class HuggingFaceClient(base.AbstractDatasetClient):
                         )
 
                         return summary
+
+    def get_data_file_from_dir(self, directory: str) -> List[str]:
+        """
+        Given a directory, this returns the path of all files within that directory
+        (as well as nested files) that have 'train' or 'test' in their name. The
+        output is a list of these paths.
+
+        TODO look at this, see if u can make it better: https://huggingface.co/docs/datasets/loading
+        """
+
+        data_files = []
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if "train" in file or "test" in file or "valid" in file:
+                    data_files.append(os.path.join(root, file))
+
+        return data_files

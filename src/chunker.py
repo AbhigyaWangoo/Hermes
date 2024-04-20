@@ -1,6 +1,7 @@
 import os
 import random
 import pandas as pd
+from datasets import load_dataset
 from typing import List, Dict, Any
 import numpy as np
 from src.client.mongo import MongoDBUploader
@@ -10,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHUNK_SIZE = 100
-
+DEFAULT_NUM_CHUNKS=50
 
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
@@ -25,7 +26,7 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = 3, split_by_line: bool=True) -> List[str]:
+    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = DEFAULT_NUM_CHUNKS, split_by_line: bool=True) -> List[str]:
         """
         Split the DataFrame into chunks of size self.chunk_size.
 
@@ -50,6 +51,36 @@ class Chunker:
         rand_chunks = np.random.choice(chunks, n_chunks)
         return rand_chunks
 
+    def read_into_df(self, file_path: str) -> pd.DataFrame:
+        """ A helper function to read any file type into a df """
+
+        file_formats = {'.csv': 'csv', '.json': 'json', '.txt': 'txt', '.parquet': 'parquet'}
+        file_type = None
+
+        _, ext = os.path.splitext(file_path)
+        if ext in file_formats:
+            file_type = file_formats[ext]
+        else:
+            raise ValueError(f"Unsupported file format: {ext}")
+
+        try:
+            if file_type == 'csv':
+                df = pd.read_csv(file_path)
+            elif file_type == 'json':
+                df = pd.read_json(file_path)
+            elif file_type == 'txt':
+                # Assuming text file is whitespace separated
+                df = pd.read_csv(file_path, delim_whitespace=True)
+            elif file_type == 'parquet':
+                df = pd.read_parquet(file_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_type}")
+        except ValueError as ve:
+            print(f"Error when loading dataset file {file_path}. Erroring out: {ve}")
+            raise ValueError from ve
+
+        return df
+
     def process_files(
         self, files: List[str], dataset_name: str
     ) -> Dict[str, List[List[float]]]:
@@ -57,15 +88,12 @@ class Chunker:
         This wrapper coalesces multiple files into one single dataframe to chunk.
         """
         rv_df: pd.DataFrame
-        with open(files[0], "r", encoding="utf8") as fp:
-            rv_df = pd.read_csv(fp)
+        rv_df=self.read_into_df(files[0])
 
         for i in range(1, len(files), 1):
             fstr = files[i]
-            with open(fstr, "r", encoding="utf8") as fp:
-                df = pd.read_csv(fp)
-
-                rv_df = rv_df.append(df, ignore_index=True)
+            df = self.read_into_df(fstr)
+            rv_df = rv_df.append(df, ignore_index=True)
 
         return self.process_dataset(rv_df, dataset_name)
 
@@ -81,8 +109,9 @@ class Chunker:
             chunks = self.split_into_chunks(data)
             embedded_chunks = {}
             for idx, chunk in enumerate(chunks):
+                embeddings = self.openai_client.generate_embeddings(chunk)
                 embedded_chunks[f"{dataset_name}_{idx}"] = (
-                    self.openai_client.generate_embeddings(chunk)
+                    embeddings
                 )
             return embedded_chunks
 

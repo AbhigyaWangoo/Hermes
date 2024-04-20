@@ -18,10 +18,14 @@ class MongoDBUploader:
 
         embeddings: A dictionary of {"datasetname_chunkidx: [embeddings]"}
         """
-        for idx, embedding in enumerate(embeddings):
+        for filename_idx in embeddings:
+            idx=filename_idx
+            embedding=embeddings[filename_idx]
+
             document = {
                 "_id": idx,  # filename_chunkindex
                 "dataset_embedding": embedding,  # Assuming embeddings are lists of lists
             }
+
             document.update(kwargs)  # Add additional fields from kwargs
             self.collection.insert_one(document)
