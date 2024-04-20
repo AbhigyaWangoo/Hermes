@@ -25,7 +25,7 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = -1):
+    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = 3):
         """
         Split the DataFrame into chunks of size self.chunk_size.
 
@@ -64,7 +64,7 @@ class Chunker:
         return self.process_dataset(rv_df, dataset_name)
 
     def process_dataset(
-        self, data: pd.DataFrame, dataset_name: str, k: int = 3
+        self, data: pd.DataFrame, dataset_name: str
     ) -> Dict[str, List[List[float]]]:
         """
         Read the CSV file, split it into chunks, and encode each chunk.
@@ -74,10 +74,7 @@ class Chunker:
         if data is not None:
             chunks = self.split_into_chunks(data)
             embedded_chunks = {}
-
-            # randomly select k chunks
-            selected_chunks = random.sample(chunks, k=k)
-            for idx, chunk in enumerate(selected_chunks):
+            for idx, chunk in enumerate(chunks):
                 embedded_chunks[f"{dataset_name}_{idx}"] = (
                     self.openai_client.generate_embeddings(chunk)
                 )

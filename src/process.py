@@ -17,7 +17,7 @@ def get_data_file_from_dir(directory: str) -> List[str]:
 
     for root, _, files in os.walk(directory):
         for file in files:
-            if "train" in file or "test" in file:
+            if "train" in file or "test" in file or "valid" in file:
                 data_files.append(os.path.join(root, file))
 
     return data_files
