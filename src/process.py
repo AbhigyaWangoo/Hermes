@@ -4,6 +4,23 @@ from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
 from multiprocessing import Process, Queue
 import time
+from typing import List
+
+
+def get_data_file_from_dir(directory: str) -> List[str]:
+    """
+    Given a directory, this returns the path of all files within that directory
+    (as well as nested files) that have 'train' or 'test' in their name. The
+    output is a list of these paths.
+    """
+    data_files = []
+
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if "train" in file or "test" in file or "valid" in file:
+                data_files.append(os.path.join(root, file))
+
+    return data_files
 
 
 def process_single_dataset(
@@ -15,9 +32,11 @@ def process_single_dataset(
     """
 
     dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
-
     chunker = Chunker()
-    chunks = chunker.process_file(local_fpath) # TODO currently this function is broken because it tries to read the folder as a csv.
+
+    dfiles = get_data_file_from_dir(local_fpath)
+    print(dfiles)
+    chunks = chunker.process_files(dfiles, dataset)
 
     chunker.upload_chunks_to_mongo(chunks)
 
