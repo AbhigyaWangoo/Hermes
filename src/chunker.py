@@ -73,6 +73,8 @@ class Chunker:
             ".parquet": "parquet",
         }
 
+        file_formats = {'.csv': 'csv', '.json': 'json', '.txt': 'txt', '.parquet': 'parquet'}
+
         file_type = None
 
         _, ext = os.path.splitext(file_path)
@@ -81,17 +83,27 @@ class Chunker:
         else:
             raise ValueError(f"Unsupported file format: {ext}")
 
-        encoding = None
-        with open(file_path, "rb") as f:
+        encoding=None
+        with open(file_path, 'rb') as f:
             rawdata = f.read(1024)
             result = chardet.detect(rawdata)
-            encoding = result["encoding"]
+            encoding = result['encoding']
 
         print(encoding)
 
         try:
-            dataset_dict = load_dataset(file_type, data_files=file_path)
-            df = pd.concat([dataset.to_pandas() for dataset in dataset_dict.values()], ignore_index=True)
+            # dataset_dict = load_dataset(file_type, data_files=file_path)
+            # df = pd.concat([dataset.to_pandas(encoding=encoding) for dataset in tqdm.tqdm(dataset_dict.values(), desc="Reading dataset values and concatenating into a dataframe")], ignore_index=True)
+            if file_type == 'csv':
+                df = pd.read_csv(file_path, encoding=encoding)
+            elif file_type == 'json':
+                df = pd.read_json(file_path, encoding=encoding)
+            elif file_type == 'txt':
+                df = pd.read_csv(file_path, delimiter='\t', encoding=encoding)
+            elif file_type == 'parquet':
+                df = pd.read_parquet(file_path, engine='pyarrow')
+            else:
+                raise ValueError(f"Unsupported file format: {ext}")
         except ValueError as ve:
             print(f"Error when loading dataset file {file_path}. Erroring out: {ve}")
             raise ValueError from ve
