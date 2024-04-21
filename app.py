@@ -23,17 +23,26 @@ gpt_client = GPTClient()
 # Retrieves datasets using LlamaIndex 
 def retrieve_datasets_NLQ(dataset_description): 
     vector_store = MongoDBAtlasVectorSearch(mongo.client)
-    # vector_store = MongoDBAtlasVectorSearch(mongo.client, mongo.database_name, mongo.collection_name, index_name="vector_index", embedding_key="dataset_embedding", text_key="dataset_summary", id_key="_id", metadata_key="links")
     index = VectorStoreIndex.from_vector_store(vector_store)
 
     query_engine = index.as_query_engine(similarity_top_k=5)
-    # query_embedding = gpt_client.generate_embeddings(sentence=query)
-    # print("query_embedding", type(query_embedding), query_embedding)
     
     response = query_engine.query(dataset_description)
     print(type(response))
     print(str(response))
 
+def calc_dataset_freq(results):
+    dataset_freq = {}
+    for result in results: 
+        for dataset in result:
+            print("dataset + metadata", dataset)
+            dataset_name = "".join(dataset['_id'].split("_")[:-1])
+            print(dataset_name)
+            if dataset_name in dataset_freq:
+                dataset_freq[dataset_name]["freq"] += 1
+            else:
+                dataset_freq[dataset_name] = {"freq": 1, "name": dataset_name, "links": dataset["links"], "dataset_summary": dataset["dataset_summary"]}
+    return dataset_freq
 
 st.set_page_config(page_title="Dataset Finder", page_icon="📊🔍")
 st.title("📊🔍 Dataset Finder with MongoDB")
@@ -45,37 +54,44 @@ uploaded_file = st.file_uploader("Upload a CSV with a few examples of the data y
 dataset_description = st.text_input(
     "Don't have a CSV? No problem, describe the kind of dataset you would like",
     placeholder="A pets dataset with attributes like name, breed, age, etc",
-    disabled=not not uploaded_file,
 )
 
 submit_button = st.button(
     "Submit",
-    disabled= not uploaded_file and not dataset_description
 )
 
 if submit_button: 
-    # if uploaded_file:
-    #     examples = pd.read_csv(uploaded_file)
-    # else: 
-    #     examples = pd.DataFrame([dataset_description])
-
+    examples = []
     if uploaded_file:
-        print("user uploaded csv file")
-        # User uploaded a file, create embeddings using MongoDB Atlas Vector Search 
-
-        # Embed each example (row) in the CSV
-        embeddings = [] 
         for example in uploaded_file:
-            embeddings.append(gpt_client.generate_embeddings(sentence=example))
+            examples.append(example)
+    if dataset_description:
+        examples.append(dataset_description)
+    
 
-        print("embeddings done")
-        for embedding in embeddings:
-            print("embedding:", embedding)
-            mongo.perform_vector_search(embedding)
-    else: 
-        # User submitted a NL query -- aka a description of the dataset they're searching for 
-        response = retrieve_datasets_NLQ(dataset_description)
+    # Create embeddings using MongoDB Atlas Vector Search 
+    # Embed each example (row) in the CSV
+    embeddings = [] 
+    for example in examples:
+        embeddings.append(gpt_client.generate_embeddings(sentence=example))
 
+    all_results = []
+    for embedding in embeddings:
+        all_results.append(mongo.perform_vector_search(embedding))
+    
+    print("all_results", all_results)
+    dataset_freq = calc_dataset_freq(all_results)
+    print("dataset_freq", dataset_freq)
+
+    # for dataset in 
+    sorted_frequency_list = sorted(dataset_freq.items(), key=lambda x: x[1]['freq'], reverse=True)
+
+    print("sorted freq list", sorted_frequency_list)
+
+
+# once we get a response from 
+# st.write_stream()
+# st.write()
 
 # add a try again button 
 
