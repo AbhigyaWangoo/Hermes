@@ -21,11 +21,11 @@ class QueryHandler():
         return a Pretty print str out a response to the user
         """
 
-        response_format="%s\n\n%s\n\nDataset summary: %s\nlink to dataset: %s\n<------------>\n<------------>"
+        response_format="%s\n\n%s\n\nDataset summary: %s \nlink to dataset: %s\n\n"
 
         return response_format % (name, response, summary, link)
 
-    def coalesce_response(self, atlas_res: List[Tuple[str, Dict[str, Any]]], initial_query: str) -> str: # Ideally shouldve wrapped the response in a class. oops.
+    def coalesce_response(self, atlas_res: List[Tuple[str, Dict[str, Any]]], initial_query: str) -> List[Dict[str, Any]]: # Ideally shouldve wrapped the response in a class. oops.
         """
         Provided with a response from mongodb atlas, response to the user appropriately
         """
@@ -39,9 +39,15 @@ class QueryHandler():
 
             response = self.coalesce_a_response(initial_query, summary)
 
-            responses.append(self.pretty_print(response, name, summary, link))
+            response_json = {
+                "response": response,
+                "name": name,
+                "summary": summary,
+                "link": link
+            }
+            responses.append(response_json)
 
-        return '\n\n'.join(responses)
+        return responses
 
     def coalesce_a_response(self, initial_query: str, summary: str) -> str:
         """ 

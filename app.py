@@ -5,10 +5,11 @@ import os
 # from client.gpt import GPTClient
 from src.client.gpt import GPTClient
 from src.client.mongo import MongoDBUploader
-from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
-from llama_index.core import VectorStoreIndex
-from llama_index.core.response.notebook_utils import display_response
+# from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+# from llama_index.core import VectorStoreIndex
+# from llama_index.core.response.notebook_utils import display_response
 from IPython.display import Markdown
+from src.responder import QueryHandler
 
 load_dotenv()
 
@@ -19,17 +20,18 @@ MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION")
 
 mongo = MongoDBUploader(MONGODB_URL, MONGODB_DB, MONGODB_COLLECTION)
 gpt_client = GPTClient()
+handler=QueryHandler()
 
 # Retrieves datasets using LlamaIndex 
-def retrieve_datasets_NLQ(dataset_description): 
-    vector_store = MongoDBAtlasVectorSearch(mongo.client)
-    index = VectorStoreIndex.from_vector_store(vector_store)
+# def retrieve_datasets_NLQ(dataset_description): 
+#     vector_store = MongoDBAtlasVectorSearch(mongo.client)
+#     index = VectorStoreIndex.from_vector_store(vector_store)
 
-    query_engine = index.as_query_engine(similarity_top_k=5)
+#     query_engine = index.as_query_engine(similarity_top_k=5)
     
-    response = query_engine.query(dataset_description)
-    print(type(response))
-    print(str(response))
+#     response = query_engine.query(dataset_description)
+#     print(type(response))
+#     print(str(response))
 
 def calc_dataset_freq(results):
     dataset_freq = {}
@@ -90,6 +92,23 @@ if submit_button:
 
     print("sorted freq list", sorted_frequency_list)
 
+    st.title("Here are some awesome datasets:")
+    response = handler.coalesce_response(sorted_frequency_list, dataset_description)
+
+    if len(response) == 0:
+        st.write("Sorry, I couldn't find any matching datasets 🥲 ask Mahi and Abhigya to give me more data!")
+
+    for res in response:
+        llm_res = res["response"]
+        dataset_name = res["name"]
+        summary = res["summary"]
+        link=res["link"]
+
+
+        st.subheader(dataset_name, divider="rainbow")
+        st.write(llm_res)
+        st.write(f"**A quick dataset summary for you as well:** {summary}")
+        st.write(f"**Aaaaaaand a link if you'd like to dive deeper:** {link}")
 
 # once we get a response from 
 # st.write_stream()
