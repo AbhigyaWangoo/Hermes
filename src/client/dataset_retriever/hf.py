@@ -55,7 +55,7 @@ class HuggingFaceClient(base.AbstractDatasetClient):
     def generate_dataset_link(self, dataset_id: str) -> str:
         """
         Gather the link to a huggingface dataset.
-        
+
         dataset_id: the name of the dataset in hf
         """
         base_url = "https://huggingface.co/datasets/"
@@ -65,7 +65,7 @@ class HuggingFaceClient(base.AbstractDatasetClient):
 
     def generate_dataset_summary(self, dataset_id: str) -> str:
         """
-        Get the summary of the huggingface dataset. Reads the 
+        Get the summary of the huggingface dataset. Reads the
         readme file and generates a summary based on that.
 
         dataset_id: the root dir of the dataset
@@ -75,11 +75,11 @@ class HuggingFaceClient(base.AbstractDatasetClient):
             for file in files:
                 if file.lower() == "readme.md":
                     with open(os.path.join(root, file), "r", encoding="utf8") as fp:
-                        documentation=fp.read().strip()
+                        documentation = fp.read().strip()
 
                         summary = self.gpt_client.query(
                             prompt=documentation,
-                            sys_prompt=base.DATASET_SUMMMARY_PROMPT
+                            sys_prompt=base.DATASET_SUMMMARY_PROMPT,
                         )
 
                         return summary

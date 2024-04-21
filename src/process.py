@@ -4,6 +4,7 @@ from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
 from include.utils import clear_directory
 
+
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
 ):
@@ -23,8 +24,8 @@ def process_single_dataset(
         chunks = chunker.process_files(dfiles, dataset)
 
         # Gathering other metadata for the document
-        summary=dataset_client.generate_dataset_summary(local_fpath)
-        links=dataset_client.generate_dataset_link(dataset)
+        summary = dataset_client.generate_dataset_summary(local_fpath)
+        links = dataset_client.generate_dataset_link(dataset)
 
         chunker.upload_chunks_to_mongo(chunks, links=links, dataset_summary=summary)
         clear_directory(local_fpath)
@@ -35,13 +36,14 @@ def process_single_dataset(
         print(f"Dataset had some error, continuing like nothing happened... {e}")
         log_failed(dataset, e)
 
+
 def log_failed(dataset: str, err: str):
     """Logs a failed dataset's name to file, along with the error."""
-    logfile="failed.txt"
+    logfile = "failed.txt"
 
-    mode='w'
+    mode = "w"
     if os.path.exists(logfile):
-        mode='a'
+        mode = "a"
 
     with open(logfile, mode, encoding="utf8") as fp:
         fp.write(f"{dataset} load failed, error: {err}\n")
@@ -53,6 +55,7 @@ def main_loop(n_proc: int):
 
     n_proc: the number of processes to fire off the process_dataset function. TODO implement
     """
+    n_proc += 1  # to silence unused warning
 
     dcl = HuggingFaceClient()
     dtp = dcl.list_datasets("text-classification")

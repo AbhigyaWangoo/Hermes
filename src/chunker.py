@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHUNK_SIZE = 100
-DEFAULT_NUM_CHUNKS=300
+DEFAULT_NUM_CHUNKS = 300
+
 
 class Chunker:
     """A class to chunk up a dataset and place each chunk into mongodb atlas"""
@@ -28,10 +29,15 @@ class Chunker:
         self.mongo_client = MongoDBUploader(mongodb_url, mongodb_db, mongodb_collection)
         self.openai_client = GPTClient()
 
-    def split_into_chunks(self, data: pd.DataFrame, n_chunks: int = DEFAULT_NUM_CHUNKS, split_by_line: bool=True) -> List[str]:
+    def split_into_chunks(
+        self,
+        data: pd.DataFrame,
+        n_chunks: int = DEFAULT_NUM_CHUNKS,
+        split_by_line: bool = True,
+    ) -> List[str]:
         """
         Split the DataFrame into chunks of size self.chunk_size.
-        
+
         TODO splitting by string chunks seems to be broken right now. split by line for default.
 
         data: df with data.
@@ -49,15 +55,22 @@ class Chunker:
                 chunks.append(chunk)
         else:
             random_indices = random.sample(range(len(data)), n_chunks)
-            chunks = [data.iloc[index].to_string(index=False) for index in random_indices]
+            chunks = [
+                data.iloc[index].to_string(index=False) for index in random_indices
+            ]
 
         rand_chunks = np.random.choice(chunks, n_chunks)
         return rand_chunks
 
     def read_into_df(self, file_path: str) -> pd.DataFrame:
-        """ A helper function to read any file type into a df """
+        """A helper function to read any file type into a df"""
 
-        file_formats = {'.csv': 'csv', '.json': 'json', '.txt': 'txt', '.parquet': 'parquet'}
+        file_formats = {
+            ".csv": "csv",
+            ".json": "json",
+            ".txt": "txt",
+            ".parquet": "parquet",
+        }
 
         file_type = None
 
@@ -67,25 +80,25 @@ class Chunker:
         else:
             raise ValueError(f"Unsupported file format: {ext}")
 
-        encoding=None
-        with open(file_path, 'rb') as f:
+        encoding = None
+        with open(file_path, "rb") as f:
             rawdata = f.read(1024)
             result = chardet.detect(rawdata)
-            encoding = result['encoding']
+            encoding = result["encoding"]
 
         print(encoding)
 
         try:
             # dataset_dict = load_dataset(file_type, data_files=file_path)
             # df = pd.concat([dataset.to_pandas(encoding=encoding) for dataset in tqdm.tqdm(dataset_dict.values(), desc="Reading dataset values and concatenating into a dataframe")], ignore_index=True)
-            if file_type == 'csv':
+            if file_type == "csv":
                 df = pd.read_csv(file_path, encoding=encoding)
-            elif file_type == 'json':
+            elif file_type == "json":
                 df = pd.read_json(file_path, encoding=encoding)
-            elif file_type == 'txt':
-                df = pd.read_csv(file_path, delimiter='\t', encoding=encoding)
-            elif file_type == 'parquet':
-                df = pd.read_parquet(file_path, engine='pyarrow')
+            elif file_type == "txt":
+                df = pd.read_csv(file_path, delimiter="\t", encoding=encoding)
+            elif file_type == "parquet":
+                df = pd.read_parquet(file_path, engine="pyarrow")
             else:
                 raise ValueError(f"Unsupported file format: {ext}")
         except ValueError as ve:
@@ -125,13 +138,21 @@ class Chunker:
         if data is not None:
             chunks = self.split_into_chunks(data)
             embedded_chunks = {}
-            for idx, chunk in tqdm.tqdm(enumerate(chunks), desc=f"Embedding {len(chunks)} chunks for dataset {dataset_name}"):
+            for idx, chunk in tqdm.tqdm(
+                enumerate(chunks),
+                desc=f"Embedding {len(chunks)} chunks for dataset {dataset_name}",
+            ):
                 embeddings = self.openai_client.generate_embeddings(chunk)
-                embedded_chunks[f"{dataset_name}_{idx}"] = (
-                    embeddings
-                )
+                embedded_chunks[f"{dataset_name}_{idx}"] = embeddings
             return embedded_chunks
 
-    def upload_chunks_to_mongo(self, chunks: Dict[str, List[List[float]]], links: List[str]=None, dataset_summary: str=None):
+    def upload_chunks_to_mongo(
+        self,
+        chunks: Dict[str, List[List[float]]],
+        links: List[str] = None,
+        dataset_summary: str = None,
+    ):
         """Upload a set of chunk embeddings into mongodb with the filename+chunksize"""
-        self.mongo_client.upload_embeddings(chunks, links=links, dataset_summary=dataset_summary)
+        self.mongo_client.upload_embeddings(
+            chunks, links=links, dataset_summary=dataset_summary
+        )

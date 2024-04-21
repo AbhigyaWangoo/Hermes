@@ -1,6 +1,7 @@
 import pymongo
 from typing import Dict, List
 
+
 class MongoDBUploader:
     """A helper class to upload mongo db embeddings"""
 
@@ -19,8 +20,8 @@ class MongoDBUploader:
         embeddings: A dictionary of {"datasetname_chunkidx: [embeddings]"}
         """
         for filename_idx in embeddings:
-            idx=filename_idx
-            embedding=embeddings[filename_idx]
+            idx = filename_idx
+            embedding = embeddings[filename_idx]
 
             document = {
                 "_id": idx,  # filename_chunkindex
