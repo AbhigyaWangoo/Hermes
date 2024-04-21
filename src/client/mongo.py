@@ -64,10 +64,8 @@ class MongoDBUploader:
 
         print("running pipeline finished")
 
-        print(list(result))
-        # print results
-        for i in result:
-            print(i)
+        # print(list(result))
+        return result 
  
     def delete_all(self):
         """Deletes an entire collection. Be careful with this one..."""
