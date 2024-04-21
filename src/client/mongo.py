@@ -34,3 +34,73 @@ class MongoDBUploader:
     def delete_all(self):
         """Deletes an entire collection. Be careful with this one..."""
         self.collection.delete_many({})
+
+    def perform_vector_search(self, query_embedding):
+        # define pipeline
+        pipeline = [
+            {
+                '$vectorSearch': {
+                'index': 'vector_index', 
+                'path': 'dataset_embedding', 
+                'queryVector': query_embedding,
+                'numCandidates': 50, 
+                'limit': 5
+                }
+            }, {
+                '$project': {
+                '_id': 1, 
+                'links': 1, 
+                'dataset_embedding': 1, 
+                'dataset_summary': 1, 
+                'score': {
+                    '$meta': 'vectorSearchScore'
+                }
+                }
+            }
+        ]
+
+        print("pipeline constructed")
+        result = self.client[self.database_name][self.collection_name].aggregate(pipeline)
+
+        print("running pipeline finished")
+
+        # print(list(result))
+        return result 
+ 
+    def delete_all(self):
+        """Deletes an entire collection. Be careful with this one..."""
+        self.collection.delete_many({})
+
+    def perform_vector_search(self, query_embedding):
+        # define pipeline
+        pipeline = [
+            {
+                '$vectorSearch': {
+                'index': 'vector_index', 
+                'path': 'dataset_embedding', 
+                'queryVector': query_embedding,
+                'numCandidates': 50, 
+                'limit': 5
+                }
+            }, {
+                '$project': {
+                '_id': 1, 
+                'links': 1, 
+                'dataset_embedding': 1, 
+                'dataset_summary': 1, 
+                'score': {
+                    '$meta': 'vectorSearchScore'
+                }
+                }
+            }
+        ]
+
+        print("pipeline constructed")
+        result = self.client[self.database_name][self.collection_name].aggregate(pipeline)
+
+        print("running pipeline finished")
+        return result 
+ 
+    def delete_all(self):
+        """Deletes an entire collection. Be careful with this one..."""
+        self.collection.delete_many({})

@@ -4,7 +4,6 @@ from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
 from include.utils import clear_directory
 
-
 def process_single_dataset(
     dataset: str, local_fpath: str, dataset_client: AbstractDatasetClient
 ):

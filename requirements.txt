@@ -1,6 +1,15 @@
 huggingface_hub
 pandas
+<<<<<<< HEAD
 python-dotenv
 pymongo
+<<<<<<< HEAD
+=======
+streamlit
+=======
+>>>>>>> b28e4c4 (Added file logging)
+python-dotenv
+pymongo
+>>>>>>> ca3461e (Added file logging)
 chardet
 datasets
