@@ -2,25 +2,7 @@ import os
 from src.client.dataset_retriever.base import AbstractDatasetClient
 from src.client.dataset_retriever.hf import HuggingFaceClient, DATASET_DIR
 from src.chunker import Chunker
-from multiprocessing import Process, Queue
-import time
-from typing import List
-
-
-def get_data_file_from_dir(directory: str) -> List[str]:
-    """
-    Given a directory, this returns the path of all files within that directory
-    (as well as nested files) that have 'train' or 'test' in their name. The
-    output is a list of these paths.
-    """
-    data_files = []
-
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if "train" in file or "test" in file or "valid" in file:
-                data_files.append(os.path.join(root, file))
-
-    return data_files
+from include.utils import clear_directory
 
 
 def process_single_dataset(
@@ -31,50 +13,59 @@ def process_single_dataset(
     in mongodb
     """
 
-    dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
+    if not os.path.exists(local_fpath):
+        dataset_client.download_dataset(dataset_id=dataset, local_filepath=local_fpath)
+
     chunker = Chunker()
+    dfiles = dataset_client.get_data_file_from_dir(local_fpath)
+    print(f"Uploading dataset {dfiles}")
 
-    dfiles = get_data_file_from_dir(local_fpath)
-    print(dfiles)
-    chunks = chunker.process_files(dfiles, dataset)
+    try:
+        chunks = chunker.process_files(dfiles, dataset)
 
-    chunker.upload_chunks_to_mongo(chunks)
+        # Gathering other metadata for the document
+        summary = dataset_client.generate_dataset_summary(local_fpath)
+        links = dataset_client.generate_dataset_link(dataset)
+
+        chunker.upload_chunks_to_mongo(chunks, links=links, dataset_summary=summary)
+        clear_directory(local_fpath)
+    except ValueError as e:
+        print(f"Dataset {dataset} couldn't be read. Continuing... {e}")
+        log_failed(dataset, e)
+    except Exception as e:
+        print(f"Dataset had some error, continuing like nothing happened... {e}")
+        log_failed(dataset, e)
+
+
+def log_failed(dataset: str, err: str):
+    """Logs a failed dataset's name to file, along with the error."""
+    logfile = "failed.txt"
+
+    mode = "w"
+    if os.path.exists(logfile):
+        mode = "a"
+
+    with open(logfile, mode, encoding="utf8") as fp:
+        fp.write(f"{dataset} load failed, error: {err}\n")
 
 
 def main_loop(n_proc: int):
     """
     Main iteration loop. This runs constantly, pulling dataset after dataset, chunking
 
-    n_proc: the number of processes to fire off the process_dataset function.
+    n_proc: the number of processes to fire off the process_dataset function. TODO implement
     """
+    n_proc += 1  # to silence unused warning
 
-    # Queue for communication between processes
-    dataset_queue = Queue()
+    dcl = HuggingFaceClient()
+    dtp = dcl.list_datasets("text-classification")
 
-    while True:
-        # Retrieve datasets and add them to the queue
-        dataset_client = HuggingFaceClient()
-        datasets_to_process = dataset_client.list_datasets("text-classification")
-        for dataset in datasets_to_process:
-            dataset_queue.put(dataset)
+    for dataset in dtp:
+        name = dataset.id
+        print(name)
+        dataset_dst = os.path.join(DATASET_DIR, name.split("/")[-1])
 
-        # Start the processing processes
-        processes = []
-        for _ in range(n_proc):
-            if not dataset_queue.empty():
-                dataset = dataset_queue.get()
-                p = Process(
-                    target=process_single_dataset,
-                    args=(dataset, os.path.join(DATASET_DIR, dataset), dataset_client),
-                )
-                p.start()
-                processes.append(p)
-            else:
-                break
+        if os.path.exists(dataset_dst):
+            continue
 
-        # Wait for all processes to finish
-        for p in processes:
-            p.join()
-
-        # Sleep for some time before checking for new datasets again
-        time.sleep(10)  # Adjust sleep time as needed
+        process_single_dataset(name, dataset_dst, dcl)

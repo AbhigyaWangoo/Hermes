@@ -1,5 +1,5 @@
 import pymongo
-import random
+from typing import Dict, List
 
 
 class MongoDBUploader:
@@ -13,13 +13,24 @@ class MongoDBUploader:
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
 
-    def upload_embeddings(self, embeddings):
+    def upload_embeddings(self, embeddings: Dict[str, List[float]], **kwargs):
         """
         Upload embeddings to MongoDB Atlas.
+
+        embeddings: A dictionary of {"datasetname_chunkidx: [embeddings]"}
         """
-        for idx, embedding in enumerate(embeddings):
+        for filename_idx in embeddings:
+            idx = filename_idx
+            embedding = embeddings[filename_idx]
+
             document = {
                 "_id": idx,  # filename_chunkindex
                 "dataset_embedding": embedding,  # Assuming embeddings are lists of lists
             }
+
+            document.update(kwargs)  # Add additional fields from kwargs
             self.collection.insert_one(document)
+
+    def delete_all(self):
+        """Deletes an entire collection. Be careful with this one..."""
+        self.collection.delete_many({})
