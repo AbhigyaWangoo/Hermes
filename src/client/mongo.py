@@ -99,11 +99,6 @@ class MongoDBUploader:
         result = self.client[self.database_name][self.collection_name].aggregate(pipeline)
 
         print("running pipeline finished")
-
-        print(list(result))
-        # print results
-        for i in result:
-            print(i)
  
     def delete_all(self):
         """Deletes an entire collection. Be careful with this one..."""

@@ -34,6 +34,8 @@ def retrieve_datasets_NLQ(dataset_description):
 def calc_dataset_freq(results):
     dataset_freq = {}
     for result in results: 
+        if result is None: 
+            continue
         for dataset in result:
             print("dataset + metadata", dataset)
             dataset_name = "".join(dataset['_id'].split("_")[:-1])
