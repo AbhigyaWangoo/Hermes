@@ -2,7 +2,7 @@ huggingface_hub
 pandas
 python-dotenv
 pymongo
-python-dotenv
 chardet
 datasets
 kaggle
+streamlit

@@ -5,11 +5,10 @@ import os
 # from client.gpt import GPTClient
 from src.client.gpt import GPTClient
 from src.client.mongo import MongoDBUploader
-# from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
-# from llama_index.core import VectorStoreIndex
-# from llama_index.core.response.notebook_utils import display_response
 from IPython.display import Markdown
 from src.responder import QueryHandler
+
+from IPython.display import Markdown
 
 load_dotenv()
 
