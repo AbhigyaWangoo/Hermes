@@ -2,6 +2,12 @@ huggingface_hub
 pandas
 python-dotenv
 pymongo
+<<<<<<< HEAD
+=======
+streamlit
+python-dotenv
+pymongo
+>>>>>>> ca3461e (Added file logging)
 chardet
 datasets
 kaggle
