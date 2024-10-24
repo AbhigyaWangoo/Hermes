@@ -34,6 +34,9 @@ class QueryHandler():
             name=dataset[0]
             metadata=dataset[1]
 
+            for dataval in metadata:
+                print(dataval)
+
             link=metadata['links'] if 'links' in metadata else None
             summary=metadata['dataset_summary'].replace('\n',' ') if 'dataset_summary' in metadata else None
 

@@ -33,9 +33,7 @@ class KaggleDatasetClient(base.AbstractDatasetClient):
             competitions = self.api.competitions_list()
 
             for competition in competitions:
-                print(competition)
                 files=self.api.competitions_data_list_files(competition)
-                print(files)
                 rv += files
 
             return rv
